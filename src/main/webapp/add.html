@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
+
+    <link href="https://fonts.loli.net/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@^4.0.0/animate.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.2/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+    <title>Arect's</title>
+</head>
+
+<body>
+<div id="q-app">
+    <q-layout view="hHh lpR fFf">
+        <q-header elevated class="bg-primary text-white">
+            <q-toolbar class="bg-primary text-white shadow-2">
+                <q-icon name="auto_stories" size="sm"></q-icon>
+                <q-toolbar-title>Arect家的图书商城</q-toolbar-title>
+                <q-btn round flat @click="toUserPage">
+                    <q-avatar>
+                        <q-icon :name="nowAvatar" size="sm"></q-icon>
+                    </q-avatar>
+                </q-btn>
+            </q-toolbar>
+        </q-header>
+        <q-page-container>
+            <q-page>
+                <q-page-sticky position="bottom-right" :offset="[18, 18]">
+                    <q-fab icon="keyboard_arrow_left" direction="left" color="accent" >
+                        <q-fab-action @click="quit" color="primary"><q-icon name="logout"></q-icon></q-fab-action>
+                        <q-fab-action @click="toAddPage" color="primary"><q-icon name="add"></q-icon></q-fab-action>
+                        <q-fab-action @click="toSearchPage" color="primary"><q-icon name="search"></q-icon></q-fab-action>
+                    </q-fab>
+                </q-page-sticky>
+                <div class="row justify-center">
+                    <div class="col-8 q-gutter-y-lg q-pa-md">
+                        <transition-group appear enter-active-class="animated animate__fadeIn" leave-active-class="animated animate__fadeOut">
+                            <div v-for="b in books" :key="b.key">
+                                <q-card>
+                                    <q-card-section horizontal>
+                                        <q-card-section class="col-6">
+                                            <q-input standout="bg-light-blue text-white" v-model="b.bookname" type="text" hint="图书名称" :disable="!isAdmin"></q-input>
+                                        </q-card-section>
+                                        <q-card-section class="col-6">
+                                            <q-input standout="bg-light-blue text-white" v-model="b.author" type="text" hint="作者" :disable="!isAdmin"></q-input>
+                                        </q-card-section>
+                                    </q-card-section>
+                                    <q-card-section horizontal>
+                                        <q-card-section class="col-6">
+                                            <q-input standout="bg-light-blue text-white" v-model="b.isbn" type="text" :hint="b.isbnHint" prefix="ISBN" mask="### - # - #### - #### - #" :disable="!isAdmin">
+                                                <template v-slot:after>
+                                                    <q-btn round flat icon="text_format" :loading="b.isCheck" @click="checkIsbn(b.key)" :disable="!isAdmin"></q-btn>
+                                                </template>
+                                            </q-input>
+                                        </q-card-section>
+                                        <q-card-section class="col-6">
+                                            <q-input standout="bg-light-blue text-white" v-model="b.sort" type="text" hint="类别" :disable="!isAdmin"></q-input>
+                                        </q-card-section>
+                                    </q-card-section>
+                                    <q-card-section horizontal>
+                                        <q-card-section class="col-6">
+                                            <q-input standout="bg-light-blue text-white" v-model="b.date" type="text" hint="出版日期" :disable="!isAdmin">
+                                                <template v-slot:after>
+                                                    <q-btn round flat icon="event" :disable="!isAdmin">
+                                                        <q-popup-proxy :breakpoint="600">
+                                                            <q-date v-model="b.date"></q-date>
+                                                        </q-popup-proxy>
+                                                    </q-btn>
+                                                </template>
+                                            </q-input>
+                                        </q-card-section>
+                                        <q-card-section class="col-6" horizontal>
+                                            <q-card-section class="col-6">
+                                                <q-input standout="bg-light-blue text-white" v-model="b.price" type="number" hint="价格" :disable="!isAdmin"></q-input>
+                                            </q-card-section>
+                                            <q-card-section class="col-6">
+                                                <q-input standout="bg-light-blue text-white" v-model="b.amount" type="number" hint="数量" :disable="!isAdmin"></q-input>
+                                            </q-card-section>
+                                        </q-card-section>
+                                    </q-card-section>
+                                    <q-card-section class="row justify-end">
+                                        <q-btn flat label="删除" class="col-2" color="red" @click="deleteBook(b.key)" :disable="!isAdmin"></q-btn>
+                                    </q-card-section>
+                                </q-card>
+                            </div>
+                        </transition-group>
+                        <div class="row justify-end q-gutter-x-md">
+                            <q-btn label="添加" class="col-2" color="primary" @click="addBook" :disable="!isAdmin"></q-btn>
+                            <q-btn label="提交" class="col-2" color="primary" :disable="books.length === 0 || !isAdmin" @click="submitBooks"></q-btn>
+                        </div>
+                    </div>
+                </div>
+                <q-dialog v-model="dialog.show" seamless position="bottom">
+                    <q-card class="bg-grey-2" style="width: 350px">
+                        <q-bar>
+                            {{ dialog.title }}
+                            <q-space></q-space>
+                            <q-btn dense flat icon="close" v-close-popup></q-btn>
+                        </q-bar>
+                        <div v-if="!dialog.loading">
+                            <q-item>
+                                <q-item-section avatar>
+                                    <q-icon :color="dialog.iconColor" :name="dialog.icon" />
+                                </q-item-section>
+                                <q-item-section>{{ dialog.msg }}</q-item-section>
+                            </q-item>
+                        </div>
+                        <div v-else>
+                            <q-item>
+                                <q-item-section>
+                                    <q-linear-progress indeterminate color="primary" />
+                                </q-item-section>
+                            </q-item>
+                        </div>
+                    </q-card>
+                </q-dialog>
+            </q-page>
+        </q-page-container>
+    </q-layout>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.1/dist/quasar.umd.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.1/dist/lang/zh-CN.umd.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+    const api = axios.create({
+        baseURL: 'http://localhost:8080/BookMarket-1.0/',
+        timeout: 5000,
+        method:'post',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'Accept': 'application/json'
+        }
+    })
+    const app = Vue.createApp({
+        setup () {
+            return {}
+        },
+        data () {
+            return {
+                nowAvatar: 'person',
+                // 图书名称、图书书号、作者、出版时间、价格、类别、数量
+                theKey: 1,
+                books: [{
+                    key: 0,
+                    bookname: '',
+                    author: '',
+                    isbn: '',
+                    sort: '',
+                    date: '',
+                    price: '',
+                    amount: '',
+                    isCheck: false,
+                    isbnHint: '书号'
+                }],
+                dialog: {
+                    show: false,
+                    title: '没有标题',
+                    msg: '没有信息',
+                    icon: 'person',
+                    iconColor: 'blue',
+                    loading: false
+                },
+                isAdmin: false
+            }
+        },
+        mounted () {
+            const data = {
+                username: this.cookieAct('bookmarket_username', '', 'get'),
+                password: this.cookieAct('bookmarket_password', '', 'get')
+            }
+            if (data.username == null || data.password == null) {
+                window.location = "login.html"
+            }
+            const sd = this.setDialog
+            const si = (obj) => {
+                this.isAdmin = obj
+            }
+            api.post('/identityServlet', data)
+                .then(function (response) {
+                    if (response.data.identity === 2) {
+                        si(true)
+                    } else if (response.data.identity === 1) {
+                        si(false)
+                        sd(true, '游客', '没有权限', 'close', 'red', false)
+                    } else {
+                        si(false)
+                        sd(true, '出现了问题', '请检查是否登录', 'close', 'red', false)
+                    }
+                })
+                .catch(function (error) {
+                    si(false)
+                    sd(true, '出现了问题', '检查是否登录或其它问题', 'close', 'red', false)
+                });
+        },
+        methods: {
+            toUserPage () {
+                window.location = 'user.html'
+            },
+            toAddPage () {
+                window.location = 'add.html'
+            },
+            toSearchPage () {
+                window.location = 'home.html'
+            },
+            addBook () {
+                this.books.push({
+                    key: this.theKey++,
+                    bookname: '',
+                    author: '',
+                    isbn: '',
+                    sort: '',
+                    date: '',
+                    price: '',
+                    amount: '',
+                    isCheck: false,
+                    isbnHint: '书号'
+                })
+            },
+            deleteBook (x) {
+                for (let i = 0; i < this.books.length; i++) {
+                    if (this.books[i].key === x) {
+                        this.books.splice(i, 1)
+                    }
+                }
+            },
+            submitBooks () {
+                const data = this.books
+                const ai = this.afterInsert
+                api.post('/addServlet', data)
+                    .then(function (response) {
+                        ai(response.data)
+                    })
+                    .catch(function (error) {
+                        console.log(response.data)
+                    });
+            },
+            checkIsbn (x) {
+                for (let i = 0; i < this.books.length; i++) {
+                    if (this.books[i].key === x) {
+                        this.books[i].isCheck = true
+                        const data = {
+                            params: { 'isbn': this.books[i].isbn }
+                        }
+                        const result = (b) => {
+                            if (b === 1) {
+                                this.books[i].isbnHint = '书号：检查正确'
+                            } else if (b === 2) {
+                                this.books[i].isbnHint = '书号：检查错误'
+                            } else if (b === 3) {
+                                this.books[i].isbnHint = '书号：网络错误'
+                            }
+                            this.books[i].isCheck = false
+                        }
+                        api.get('/isbnCheck', data)
+                            .then(function (response) {
+                                if (response.data.check) {
+                                    result(1)
+                                } else {
+                                    result(2)
+                                }
+                            })
+                            .catch(function (error) {
+                                result(3)
+                            });
+                    }
+                }
+            },
+            afterInsert (obj) {
+                if (obj.add) {
+                    this.books = [{
+                        key: this.theKey++,
+                        bookname: '',
+                        author: '',
+                        isbn: '',
+                        sort: '',
+                        date: '',
+                        price: '',
+                        amount: '',
+                        isCheck: false,
+                        isbnHint: '书号'
+                    }]
+                    this.setDialog(true, '添加成功', '已完成书本的添加', 'done', 'green', false)
+                } else {
+                    for (o in obj.error) {
+                        for (let i = 0; i < this.books.length; i++) {
+                            if (this.books[i].key === o) {
+                                this.books.splice(i, 1)
+                                break
+                            }
+                        }
+                    }
+                    this.setDialog(true, '添加失败', '请检查输入数据是否合法，未插入的书本已保留', 'close', 'red', false)
+                }
+            },
+            setDialog (s, t, m, i, ic, l) {
+                this.dialog.show = false
+                this.dialog.title = t
+                this.dialog.msg = m
+                this.dialog.icon = i;
+                this.dialog.iconColor = ic;
+                this.dialog.loading = l
+                this.dialog.show = s
+            },
+            cookieAct(key, value, act) {
+                if (act === 'add') {
+                    document.cookie = key + '=' + value
+                    return
+                } else if (act === 'get') {
+                    let co = document.cookie
+                    co = co.split(';')
+                    for (let i = 0; i < co.length; i++) {
+                        let temp = co[i].split('=')
+                        if (temp[0].replaceAll(' ', '') === key) {
+                            return temp[1]
+                        }
+                    }
+                    return null;
+                } else if (act === 'del') {
+                    document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                }
+            },
+            quit () {
+                this.cookieAct('bookmarket_username', '', 'del')
+                this.cookieAct('bookmarket_password', '', 'del')
+                window.location = 'login.html'
+            }
+        }
+    })
+    app.use(Quasar)
+    Quasar.lang.set(Quasar.lang.zhCN)
+    app.mount('#q-app')
+</script>
+</body>
+</html>

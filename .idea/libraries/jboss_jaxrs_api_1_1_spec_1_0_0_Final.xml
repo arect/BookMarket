@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jboss-jaxrs-api_1.1_spec-1.0.0.Final">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/JBoss/modules/javax/ws/rs/api/main/jboss-jaxrs-api_1.1_spec-1.0.0.Final.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

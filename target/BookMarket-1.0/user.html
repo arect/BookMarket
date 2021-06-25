@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
+
+    <link href="https://fonts.loli.net/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@^4.0.0/animate.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.2/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+    <title>钟健's</title>
+</head>
+
+<body>
+<div id="q-app">
+    <q-layout view="hHh lpR fFf">
+        <q-header elevated class="bg-primary text-white">
+            <q-toolbar class="bg-primary text-white shadow-2">
+                <q-icon name="auto_stories" size="sm"></q-icon>
+                <q-toolbar-title>钟健家的图书商城</q-toolbar-title>
+                <q-btn round flat @click="toUserPage">
+                    <q-avatar>
+                        <q-icon :name="nowAvatar" size="sm"></q-icon>
+                    </q-avatar>
+                </q-btn>
+            </q-toolbar>
+        </q-header>
+        <q-page-container>
+            <q-page>
+                <q-page-sticky position="bottom-right" :offset="[18, 18]">
+                    <q-fab icon="keyboard_arrow_left" direction="left" color="accent" >
+                        <q-fab-action @click="quit" color="primary"><q-icon name="logout"></q-icon></q-fab-action>
+                        <q-fab-action @click="toAddPage" color="primary"><q-icon name="add"></q-icon></q-fab-action>
+                        <q-fab-action @click="toSearchPage" color="primary"><q-icon name="search"></q-icon></q-fab-action>
+                    </q-fab>
+                </q-page-sticky>
+                <div class="row justify-center">
+                    <div class="col-8 q-gutter-y-md q-pa-md" v-if="!isAdmin">
+                        <q-card>
+                            <q-card-section class="bg-primary text-white">
+                                <div class="text-h6 items-center">
+                                    <q-avatar>
+                                        <q-icon name="shopping_cart"></q-icon>
+                                    </q-avatar>
+                                    购物车
+                                </div>
+                            </q-card-section>
+                            <q-card-section>
+                                <div v-if="cartNum">
+                                    <q-list>
+                                        <q-item v-for="c in cart" :key="c.order_id" clickable>
+                                            <q-item-section>
+                                                <q-item-label overline>《{{ c.bookname }}》</q-item-label>
+                                                <q-item-label>作者：{{ c.author }}</q-item-label>
+                                                <q-item-label caption>ISBN：{{ c.isbn }}<br />价格：{{ c.price }}</q-item-label>
+                                            </q-item-section>
+                                            <q-item-section side top>
+                                                <q-item-label caption>{{ c.order_date }}</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                                <div v-else>
+                                    <q-list>
+                                        <q-item clickable v-ripple @click="toSearchPage">
+                                            <q-item-section>
+                                                <q-item-label>空空如也</q-item-label>
+                                                <q-item-label caption>
+                                                    前往搜索页面添加书本
+                                                </q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                            </q-card-section>
+                            <q-separator></q-separator>
+                            <q-card-section class="row justify-between items-center q-gutter-x-md">
+                                <div class="text-body1">总计：{{ bookPrice }} 元</div>
+                                <q-btn flat class="col-2" color="primary" label="结算" @click="buy" :disable="!cartNum"></q-btn>
+                            </q-card-section>
+                        </q-card>
+                        <q-card>
+                            <q-card-section class="bg-primary text-white">
+                                <div class="text-h6 items-center">
+                                    <q-avatar>
+                                        <q-icon name="receipt_long"></q-icon>
+                                    </q-avatar>
+                                    历史订单
+                                </div>
+                            </q-card-section>
+                            <q-card-section>
+                                <div v-if="orderNum">
+                                    <q-list>
+                                        <q-item v-for="c in orders" :key="c.order_id" clickable>
+                                            <q-item-section>
+                                                <q-item-label overline>《{{ c.bookname }}》</q-item-label>
+                                                <q-item-label>作者：{{ c.author }}</q-item-label>
+                                                <q-item-label caption>ISBN：{{ c.isbn }}<br />价格：{{ c.price }}</q-item-label>
+                                            </q-item-section>
+                                            <q-item-section side top>
+                                                <q-item-label caption>下单日期：{{ c.order_date }}</q-item-label>
+                                                <q-item-label caption>收货地址：{{ c.info[0] }}</q-item-label>
+                                                <q-item-label caption>联系电话：{{ c.info[3] }}</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                                <div v-else>
+                                    <q-list>
+                                        <q-item clickable v-ripple @click="toSearchPage">
+                                            <q-item-section>
+                                                <q-item-label>空空如也</q-item-label>
+                                                <q-item-label caption>
+                                                    前往搜索页面添加书本
+                                                </q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                            </q-card-section>
+                            <q-separator></q-separator>
+                            <q-card-section class="row justify-end q-gutter-x-md">
+                                <q-btn flat class="col-2" color="primary" label="打印" @click="print" :disable="!orderNum"></q-btn>
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                    <div class="col-8 q-gutter-y-md q-pa-md" v-else>
+                        <q-card>
+                            <q-card-section class="bg-primary text-white">
+                                <div class="text-h6 items-center">
+                                    <q-avatar>
+                                        <q-icon name="receipt_long"></q-icon>
+                                    </q-avatar>
+                                    全部订单
+                                </div>
+                            </q-card-section>
+                            <q-card-section>
+                                <div v-if="orderNum">
+                                    <q-list>
+                                        <q-item v-for="c in orders" :key="c.order_id" clickable>
+                                            <q-item-section>
+                                                <q-item-label overline>《{{ c.bookname }}》</q-item-label>
+                                                <q-item-label>作者：{{ c.author }}</q-item-label>
+                                                <q-item-label caption>ISBN：{{ c.isbn }}<br />价格：{{ c.price }}</q-item-label>
+                                            </q-item-section>
+                                            <q-item-section side top>
+                                                <q-item-label caption>日期：{{ c.order_date }}</q-item-label>
+                                                <q-item-label caption>买家：{{ c.user_id }}</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                                <div v-else>
+                                    <q-list>
+                                        <q-item clickable v-ripple>
+                                            <q-item-section>
+                                                <q-item-label>空空如也</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </div>
+                            </q-card-section>
+                            <q-separator></q-separator>
+                            <q-card-section class="row justify-end q-gutter-x-md">
+                                <q-btn flat class="col-2" color="primary" label="打印" @click="print" :disable="!orderNum"></q-btn>
+                            </q-card-section>
+                        </q-card>
+                    </div>
+                </div>
+                <q-dialog v-model="dialog.show" seamless position="bottom">
+                    <q-card class="bg-grey-2" style="width: 400px">
+                        <q-bar>
+                            {{ dialog.title }}
+                            <q-space></q-space>
+                            <q-btn dense flat icon="close" v-close-popup></q-btn>
+                        </q-bar>
+                        <div v-if="!dialog.loading">
+                            <q-item>
+                                <q-item-section avatar>
+                                    <q-icon :color="dialog.iconColor" :name="dialog.icon" />
+                                </q-item-section>
+                                <q-item-section>{{ dialog.msg }}</q-item-section>
+                            </q-item>
+                        </div>
+                        <div v-else>
+                            <q-item>
+                                <q-item-section>
+                                    <q-linear-progress indeterminate color="primary" />
+                                </q-item-section>
+                            </q-item>
+                        </div>
+                    </q-card>
+                </q-dialog>
+                <q-dialog v-model="buyDialog.show" seamless position="bottom">
+                    <q-card class="bg-grey-2" style="width: 400px">
+                        <q-bar>
+                            输入下单信息
+                            <q-space></q-space>
+                            <q-btn dense flat icon="close" v-close-popup></q-btn>
+                        </q-bar>
+                        <q-card-section class="q-gutter-y-sm">
+                            <q-input standout="bg-light-blue text-white" v-model="buyDialog.address" type="text" hint="收货地址"></q-input>
+                            <q-input standout="bg-light-blue text-white" v-model="buyDialog.date" type="text" hint="预定收货日期">
+                                <template v-slot:after>
+                                    <q-btn round flat icon="event">
+                                        <q-popup-proxy :breakpoint="400">
+                                            <q-date v-model="buyDialog.date"></q-date>
+                                        </q-popup-proxy>
+                                    </q-btn>
+                                </template>
+                            </q-input>
+                            <q-input standout="bg-light-blue text-white" v-model="buyDialog.name" type="text" hint="收货人"></q-input>
+                            <q-input standout="bg-light-blue text-white" v-model="buyDialog.phone" type="text" hint="联系电话"></q-input>
+                        </q-card-section>
+                        <q-card-section class="row justify-end">
+                            <q-btn flat label="提交" color="primary" @click="toBuy" :disable="canBuy"></q-btn>
+                        </q-card-section>
+                    </q-card>
+                </q-dialog>
+            </q-page>
+        </q-page-container>
+    </q-layout>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.1/dist/quasar.umd.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.0.0-rc.1/dist/lang/zh-CN.umd.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+    const api = axios.create({
+        baseURL: 'http://localhost:8080/BookMarket-1.0/',
+        timeout: 5000,
+        method:'post',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'Accept': 'application/json'
+        }
+    })
+    const app = Vue.createApp({
+        setup () {
+            return {}
+        },
+        data () {
+            return {
+                nowAvatar: 'person',
+                cart: [],
+                orders: [],
+                dialog: {
+                    show: false,
+                    title: '没有标题',
+                    msg: '没有信息',
+                    icon: 'person',
+                    iconColor: 'blue',
+                    loading: false
+                },
+                isAdmin: false,
+                buyDialog: {
+                    show: false,
+                    address: '',
+                    date: '',
+                    name: '',
+                    phone: ''
+                }
+            }
+        },
+        computed: {
+            cartNum () {
+                return this.cart.length > 0
+            },
+            orderNum () {
+                return this.orders.length > 0
+            },
+            bookPrice () {
+                let sum = 0.0
+                for (let i = 0; i < this.cart.length; i++) {
+                    sum = sum + parseFloat(this.cart[i].price)
+                }
+                return sum
+            },
+            canBuy () {
+                return (this.buyDialog.date === '' || this.buyDialog.name === '' || this.buyDialog.address === '' || this.buyDialog.phone === '');
+            }
+        },
+        mounted () {
+            const data = {
+                username: this.cookieAct('bookmarket_username', '', 'get'),
+                password: this.cookieAct('bookmarket_password', '', 'get')
+            }
+            if (data.username == null || data.password == null) {
+                window.location = "login.html"
+            }
+            const sd = this.setDialog
+            const sa = (obj) => {
+                this.isAdmin = obj
+            }
+            const gc = () => {
+                if (!this.isAdmin){
+                    this.getCart()
+                }
+                this.getOrders()
+            }
+            api.post('/identityServlet', data)
+                .then(function (response) {
+                    if (response.data.identity === 2) {
+                        sa(true)
+                    } else if (response.data.identity === 1) {
+                        sa(false)
+                    } else {
+                        sd(true, '数据错误', '无法查询个人信息', 'close', 'red', false)
+                    }
+                    gc()
+                })
+                .catch(function (error) {
+                    sd(true, '网络错误', '无法查询个人信息', 'signal_wifi_bad', 'red', false)
+                });
+        },
+        methods: {
+            toUserPage () {
+                window.location = 'user.html'
+            },
+            toAddPage () {
+                window.location = 'add.html'
+            },
+            toSearchPage () {
+                window.location = 'home.html'
+            },
+            cookieAct(key, value, act) {
+                if (act === 'add') {
+                    document.cookie = key + '=' + value
+                } else if (act === 'get') {
+                    let co = document.cookie
+                    co = co.split(';')
+                    for (let i = 0; i < co.length; i++) {
+                        let temp = co[i].split('=')
+                        if (temp[0].replaceAll(' ', '') === key) {
+                            return temp[1]
+                        }
+                    }
+                    return null;
+                } else if (act === 'del') {
+                    document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                }
+            },
+            setDialog (s, t, m, i, ic, l) {
+                this.dialog.show = false
+                this.dialog.title = t
+                this.dialog.msg = m
+                this.dialog.icon = i;
+                this.dialog.iconColor = ic;
+                this.dialog.loading = l
+                this.dialog.show = s
+            },
+            buy () {
+                this.buyDialog.show = true
+            },
+            toBuy () {
+                this.buyDialog.show = false
+                this.setDialog(true, '正在处理', '', '', '', true)
+                const sd = this.setDialog
+                const bookmarket_username = this.cookieAct('bookmarket_username', '', 'get')
+                const buyInfo = this.buyDialog.address + ';' + this.buyDialog.date + ';' + this.buyDialog.name + ';' + this.buyDialog.phone
+                const bd = this.buyDialog
+                const gc = () => {
+                    this.getCart()
+                    this.getOrders()
+                }
+                api.post('/buyAllServlet', {
+                    username: bookmarket_username,
+                    info: buyInfo
+                }).then(function (response) {
+                    if (response.data.is) {
+                        sd(true, '购买成功', '祝您购物愉快', 'local_mall', 'green', false)
+                    } else {
+                        sd(true, '购买失败', '部分或全部书缺货', 'production_quantity_limits', 'red', false)
+                    }
+                    gc()
+                }).catch(function (error) {
+                    console.log(error)
+                    sd(true, '网络错误', '无法购买书本，请检查网络连接', 'signal_wifi_bad', 'red', false)
+                });
+            },
+            getCart () {
+                const setCart = (obj) => {
+                    this.cart = obj
+                }
+                const sd = this.setDialog
+                const bookmarket_username = this.cookieAct('bookmarket_username', '', 'get')
+                api.post('/getCartServlet', {
+                    username: bookmarket_username
+                }).then(function (response) {
+                    if (response.data.is) {
+                        setCart(response.data.orders)
+                    } else {
+                        setCart([])
+                    }
+                }).catch(function (error) {
+                    sd(true, '网络错误', '无法查询购物车，请检查网络连接', 'signal_wifi_bad', 'red', false)
+                });
+            },
+            getOrders () {
+                const setOrder = (obj) => {
+                    this.orders = obj
+                    for (let i = 0; i < this.orders.length; i++) {
+                        this.orders[i].info = this.orders[i].info.split(';')
+                    }
+                }
+                const sd = this.setDialog
+                const bookmarket_username = this.cookieAct('bookmarket_username', '', 'get')
+                api.post('/getOrderServlet', {
+                    username: bookmarket_username
+                }).then(function (response) {
+                    if (response.data.is) {
+                        setOrder(response.data.orders)
+                    } else {
+                        setOrder([])
+                    }
+                }).catch(function (error) {
+                    sd(true, '网络错误', '无法查询历史订单，请检查网络连接', 'signal_wifi_bad', 'red', false)
+                });
+            },
+            print () {
+                window.open('http://localhost:8080/BookMarket-1.0/printServlet?username=' + this.cookieAct('bookmarket_username', '', 'get'), '_blank');
+            },
+            quit () {
+                this.cookieAct('bookmarket_username', '', 'del')
+                this.cookieAct('bookmarket_password', '', 'del')
+                window.location = 'login.html'
+            }
+        }
+    })
+    app.use(Quasar)
+    Quasar.lang.set(Quasar.lang.zhCN)
+    app.mount('#q-app')
+</script>
+</body>
+</html>

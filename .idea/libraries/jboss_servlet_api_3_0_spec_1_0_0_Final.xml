@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jboss-servlet-api_3.0_spec-1.0.0.Final">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/JBoss/modules/javax/servlet/api/main/jboss-servlet-api_3.0_spec-1.0.0.Final.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
